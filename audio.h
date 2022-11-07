@@ -9,11 +9,14 @@ namespace ev3media {
     public:
         sound();
         sound(int fd);
-	sound(const uint8_t* wav_data, size_t wav_len);
+	    sound(const uint8_t* wav_data, size_t wav_len);
         sound(const uint8_t* data, size_t size, int format, int rate, int channels);
-        ~sound();
+        //~sound();
 
         bool is_available();
+        size_t get_data_size();
+        std::shared_ptr<uint8_t> get_data();
+        
 	//uint32_t get_len_ms();
     private:
         std::shared_ptr<uint8_t> sound_data;
@@ -52,7 +55,7 @@ namespace ev3media {
         struct channel_t {
             std::shared_ptr<uint8_t> data;
             uint8_t volume;
-            bool paused;
+            bool playing;
             size_t pos;
             size_t len;
         };
@@ -75,5 +78,4 @@ namespace ev3media {
 
         static void async_handler(audio_player* instance, bool** running_ptr);
     };
-
 }
