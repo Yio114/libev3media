@@ -141,6 +141,15 @@ namespace ev3media {
             }
         }
     }
+    
+    bool audio_player::is_playing(uint32_t channel) {
+        if(channel < channels_count) {
+            return channels[channel].playing && (channels[channel].pos < channels[channel].len)
+        }
+        else {
+            return false;
+        }
+    }
         
     void audio_player::pause_channel(uint32_t c, bool paused) {
         if(c < channels_count)

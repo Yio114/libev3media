@@ -39,6 +39,8 @@ namespace ev3media {
 
         void play(sound* snd, uint32_t channel);
         
+        bool is_playing(uint32_t channel);
+        
         void pause_channel(uint32_t c, bool paused);
         void pause_all(bool paused);
 
