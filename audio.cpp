@@ -67,21 +67,30 @@ namespace ev3media {
 	bool sound::is_available() {
 		return available;
 	}
+	
+	
+    size_t sound::get_data_size() {
+        return sound_size;
+    }
+    
+    std::shared_ptr<uint8_t> sound::get_data() {
+        return sound_data;
+    }
 
 	// audio_player
 
-    	void audio_player::init(uint32_t max_channels) {
+	void audio_player::init(uint32_t max_channels) {
 		sample_rate = 22050;
 		init_alsa();
 		channels = new channel_t[max_channels];
 		async_handler_thread = std::thread(async_handler, this, &thread_running);
 		async_handler_thread.detach();
-    	}
+	}
 
    	void audio_player::init_alsa() {
       		available = false;
         	snd_pcm_hw_params_t* hw_params;
-		int error = 0;
+		    int error = 0;
 
         	P_ERR(error, snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0))
         	P_ERR(error, snd_pcm_hw_params_malloc(&hw_params))
@@ -114,8 +123,58 @@ namespace ev3media {
 	audio_player::audio_player(uint32_t max_channels) {
 		init(max_channels);
 	}
+	
+    void audio_player::play(sound* snd, uint32_t channel) {
+        if(snd != nullptr) {
+            if(snd->is_available()) {
+                channel_t new_data;
+                memset(&new_data, 0, sizeof(channel_t));
 
-	void audio_player::free() {
+                new_data.len = snd->get_data_size();
+                new_data.data = snd->get_data();
+                new_data.playing = false;
+                channels[channel] = new_data;
+            }
+        }
+    }
+        
+    void audio_player::pause_channel(uint32_t c, bool paused) {
+        if(c < channels_count)
+            channels[c].playing = !paused;
+    }
+    
+    void audio_player::pause_all(bool paused) {
+        for(uint32_t i = 0; i < channels_count; i++) {
+            channels[i].playing = !paused;
+        }
+    }
+
+    void audio_player::clear_channel(uint32_t channel) {
+        memset(&channels[channel], 0, sizeof(channel_t));
+    }
+    
+    void audio_player::clear_all() {
+        memset(channels, 0, sizeof(channel_t) * channels_count);
+    }
+
+    void audio_player::volume_channel(uint32_t channel, float volume) {
+        if(channel < channels_count)
+            channels[channel].volume = (uint8_t)(volume * 100);
+    }
+    
+    void audio_player::volume_all(float volume) {
+        uint8_t formatted_volume = (uint8_t)(volume * 100);
+        for(uint32_t i = 0; i < channels_count; i++) {
+            channels[i].volume = formatted_volume;
+        }
+    }
+    
+    bool audio_player::is_available() {
+        return available;
+    }
+	
+
+	void audio_player::audio_player::free() {
 		*thread_running = false;
 		if(available && pcm_handle != nullptr) {
 			snd_pcm_close(pcm_handle);
@@ -135,42 +194,43 @@ namespace ev3media {
 	}
 
 	void audio_player::async_handler(audio_player* instance, bool** running_ptr) {
-		bool running = true;
-		*running_ptr = &running;
+	    bool running = true;
+	    *running_ptr = &running;
 
-		uint32_t buffer_size = instance->period_size * 2;
-        	uint8_t* buffer = new uint8_t[buffer_size];
+	    uint32_t buffer_size = instance->period_size * 2;
+    	uint8_t* buffer = new uint8_t[buffer_size];
 
-        	snd_pcm_t* pcm = instance->pcm_handle;
-		int err = 0;
+    	snd_pcm_t* pcm = instance->pcm_handle;
+	    int err = 0;
 
-        	while(running) {
-            		memset(buffer, 0, buffer_size);
-            		for(int i = 0; i < instance->channels_count; i++) {
-				channel_t* channel = &instance->channels[i];
-                		if(channel->pos < channel->len) {
-                    			channel_t* channel = &instance->channels[i];
-                    			uint32_t len = channel->len - channel->pos;
-                    			if(len > buffer_size)
-                        			len = buffer_size;
-                    
-                    			mix_audio(buffer, &channel->data.get()[channel->pos], len, channel->volume);
-				}
-                	}
+    	while(running) {
+    		memset(buffer, 0, buffer_size);
+    		for(int i = 0; i < instance->channels_count; i++) {
+                channel_t* channel = &instance->channels[i];
+                if(channel->pos < channel->len && channel->playing) {
+	                    uint32_t len = channel->len - channel->pos;
+	                    
+	                    if(len > buffer_size) {
+		                    len = buffer_size;
+		                }
 
-            		if(running) {
-                		if((err = snd_pcm_writei(pcm, buffer, instance->period_size)) < 0) {
-                 	   		if(snd_pcm_recover(pcm, err, 1) < 0) {
-                   	     			running = false;
-					}
-				}
-                    	}
+	                    mix_audio(buffer, &channel->data.get()[channel->pos], len, channel->volume);
+                }
+            }
 
-			if(snd_pcm_avail(pcm) + instance->period_size < instance->buffer_size) {
+    		if(running) {
+        		if((err = snd_pcm_writei(pcm, buffer, instance->period_size)) < 0) {
+         	   		if(snd_pcm_recover(pcm, err, 1) < 0) {
+           	     			running = false;
+	                }
+                }
+        	}
+
+            if(snd_pcm_avail(pcm) + instance->period_size < instance->buffer_size) {
                 		usleep(instance->period_size * 1000000 / instance->sample_rate);
-			}
-		}
-        	delete[] buffer;
+            }
+	    }
+    	delete[] buffer;
 	}
 }
 
