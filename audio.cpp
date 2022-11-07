@@ -53,7 +53,7 @@ namespace ev3media {
 			src_format, src_samplerate, src_channels);
 	}
 
-
+    //FIX ME
 	void sound::convert(const uint8_t* data, size_t size, int format, int rate, int channels) {
 		if(format == 16 && rate == 22050 && channels == 1) {
 			sound_data = std::shared_ptr<uint8_t>(new uint8_t[size]);
@@ -82,7 +82,10 @@ namespace ev3media {
 	void audio_player::init(uint32_t max_channels) {
 		sample_rate = 22050;
 		init_alsa();
+		
+		channels_count = max_channels;
 		channels = new channel_t[max_channels];
+		
 		async_handler_thread = std::thread(async_handler, this, &thread_running);
 		async_handler_thread.detach();
 	}
@@ -109,7 +112,7 @@ namespace ev3media {
         	snd_pcm_uframes_t pcm_period_size = 0;
         	snd_pcm_hw_params_get_period_size(hw_params, &pcm_period_size, 0);
 
-		snd_pcm_hw_params_free(hw_params);
+		    snd_pcm_hw_params_free(hw_params);
 
         	period_size = pcm_period_size;
         	buffer_size = pcm_buffer_size;
@@ -132,7 +135,8 @@ namespace ev3media {
 
                 new_data.len = snd->get_data_size();
                 new_data.data = snd->get_data();
-                new_data.playing = false;
+                new_data.playing = true;
+                new_data.volume = 100;
                 channels[channel] = new_data;
             }
         }
@@ -207,14 +211,16 @@ namespace ev3media {
     		memset(buffer, 0, buffer_size);
     		for(int i = 0; i < instance->channels_count; i++) {
                 channel_t* channel = &instance->channels[i];
+                
                 if(channel->pos < channel->len && channel->playing) {
-	                    uint32_t len = channel->len - channel->pos;
-	                    
-	                    if(len > buffer_size) {
-		                    len = buffer_size;
-		                }
+                    uint32_t len = channel->len - channel->pos;
+                    
+                    if(len > buffer_size) {
+	                    len = buffer_size;
+	                }
 
-	                    mix_audio(buffer, &channel->data.get()[channel->pos], len, channel->volume);
+                    mix_audio(buffer, &channel->data.get()[channel->pos], len, channel->volume);
+                    channel->pos += len;
                 }
             }
 
@@ -224,11 +230,10 @@ namespace ev3media {
            	     			running = false;
 	                }
                 }
+                if(snd_pcm_avail(pcm) + instance->period_size < instance->buffer_size) {
+                    		usleep(instance->period_size * 1000000 / instance->sample_rate);
+                }
         	}
-
-            if(snd_pcm_avail(pcm) + instance->period_size < instance->buffer_size) {
-                		usleep(instance->period_size * 1000000 / instance->sample_rate);
-            }
 	    }
     	delete[] buffer;
 	}
