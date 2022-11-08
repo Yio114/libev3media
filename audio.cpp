@@ -144,7 +144,7 @@ namespace ev3media {
     
     bool audio_player::is_playing(uint32_t channel) {
         if(channel < channels_count) {
-            return channels[channel].playing && (channels[channel].pos < channels[channel].len)
+            return channels[channel].playing && (channels[channel].pos < channels[channel].len) && available;
         }
         else {
             return false;
