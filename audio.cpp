@@ -211,13 +211,13 @@ namespace ev3media {
 	    *running_ptr = &running;
 
 	    uint32_t buffer_size = instance->period_size * 2;
-    	uint8_t* buffer = new uint8_t[buffer_size];
+    	std::unique_ptr<uint8_t> buffer = std::unique_ptr<uint8_t>(new uint8_t[buffer_size]);
 
     	snd_pcm_t* pcm = instance->pcm_handle;
 	    int err = 0;
 
     	while(running) {
-    		memset(buffer, 0, buffer_size);
+    		memset(buffer.get(), 0, buffer_size);
     		for(int i = 0; i < instance->channels_count; i++) {
                 channel_t* channel = &instance->channels[i];
                 
@@ -228,13 +228,13 @@ namespace ev3media {
 	                    len = buffer_size;
 	                }
 
-                    mix_audio(buffer, &channel->data.get()[channel->pos], len, channel->volume);
+                    mix_audio(buffer.get(), &channel->data.get()[channel->pos], len, channel->volume);
                     channel->pos += len;
                 }
             }
 
     		if(running) {
-        		if((err = snd_pcm_writei(pcm, buffer, instance->period_size)) < 0) {
+        		if((err = snd_pcm_writei(pcm, buffer.get(), instance->period_size)) < 0) {
          	   		if(snd_pcm_recover(pcm, err, 1) < 0) {
            	     			running = false;
 	                }
@@ -244,7 +244,6 @@ namespace ev3media {
                 }
         	}
 	    }
-    	delete[] buffer;
 	}
 }
 
