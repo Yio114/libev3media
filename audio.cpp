@@ -49,7 +49,7 @@ namespace ev3media {
 		uint16_t src_channels = GET_FROM_DATA(wav_data, 22, uint16_t);
 		uint16_t src_frame_size = GET_FROM_DATA(wav_data, 32, uint16_t);
 
-		convert(&wav_data[44], *(uint32_t*)(&wav_data[40]) / (src_channels * src_format / 8), 
+		convert(&wav_data[44], *(uint32_t*)(&wav_data[40]), 
 			src_format, src_samplerate, src_channels);
 	}
 
