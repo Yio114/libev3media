@@ -248,7 +248,7 @@ namespace ev3media {
 					}
 				}
 				if(snd_pcm_avail(pcm) + instance->period_size < instance->buffer_size) {
-					sleep(instance->period_size * 1000000 / instance->sample_rate);
+					usleep(instance->period_size * 1000000 / instance->sample_rate);
 				}
 			}
 		}
