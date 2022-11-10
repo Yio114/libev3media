@@ -209,8 +209,14 @@ namespace ev3media {
 	}
 
 	static void mix_audio(uint8_t* dst, const uint8_t* src, uint32_t len, float volume) {
-		for(uint32_t i = 0; i < len; i++) {
-			dst[i] = src[i];
+		int sample_size = sizeof(int16_t);
+		for(uint32_t i = 0; i < len / sample_size; i++) {
+			int16_t src_sample = *(uint16_t*)(src[i * sample_size]);
+			int16_t dst_sample = *(uint16_t*)(dst[i * sample_size]);
+
+			int16_t result_sample = 2*(src_sample + dst_sample) - src_sample * dst_sample / 128 - 256;
+
+			memcpy(&dst[i * sample_size], &result_sample, sample_size);
 		}
 	}
 
