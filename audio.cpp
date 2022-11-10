@@ -217,7 +217,7 @@ namespace ev3media {
 			int16_t src_sample = src16[i];
 			int16_t dst_sample = dst16[i];
 
-			int16_t result_sample = 2*(src_sample + dst_sample) - src_sample * dst_sample / 128 - 256;
+			int16_t result_sample = src_sample + dst_sample;
 
 			memcpy(&dst16[i], &result_sample, sample_size);
 		}
