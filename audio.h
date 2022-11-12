@@ -1,3 +1,4 @@
+#pragma once
 #include <alsa/asoundlib.h>
 #include <stdint.h>
 #include <memory>
