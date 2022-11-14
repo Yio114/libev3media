@@ -101,6 +101,7 @@ namespace ev3media {
 	void audio_player::init_alsa() {
 		available = false;
 		snd_pcm_hw_params_t* hw_params;
+		snd_pcm_uframes_t pcm_buffer_size = (snd_pcm_uframes_t)(4096 * 3);
 		int error = 0;
 
 		P_ERR(error, snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0))
@@ -112,13 +113,13 @@ namespace ev3media {
 		P_ERR(error, snd_pcm_hw_params_set_channels(pcm_handle, hw_params, 1))
 		P_ERR(error, snd_pcm_hw_params_set_rate_near(pcm_handle, hw_params, &sample_rate, 0))
 		P_ERR(error, snd_pcm_hw_params_set_period_size(pcm_handle, hw_params, 4096/*4096 * 4*/, 0))
+		P_ERR(error, snd_pcm_hw_params_set_buffer_size_min(pcm_handle, hw_params, &pcm_buffer_size))
 		P_ERR(error, snd_pcm_hw_params(pcm_handle, hw_params))
 
-		snd_pcm_uframes_t pcm_buffer_size = 0;
-		snd_pcm_hw_params_get_buffer_size(hw_params, &pcm_buffer_size);
 
 		snd_pcm_uframes_t pcm_period_size = 0;
 		snd_pcm_hw_params_get_period_size(hw_params, &pcm_period_size, 0);
+		snd_pcm_hw_params_get_buffer_size(hw_params, &pcm_buffer_size);
 
 		snd_pcm_hw_params_free(hw_params);
 
