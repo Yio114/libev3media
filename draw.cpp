@@ -21,8 +21,9 @@ namespace ev3media {
 				int ry = y + src_rect.y;
 
 				if (rx >= 0 && rx < dst_res.w && ry >= 0 && ry < dst_res.h) {
-					int ix = (int)(((float)x / (float)src_rect.w) * (float)src_res.w);
-					int iy = (int)(((float)y / (float)src_rect.h) * (float)src_res.h);
+					int ix = (x * scr_res.w) / src_rect.w;
+					int iy = (y * scr_res.h) / src_rect.h;
+
 					if (ix >= 0 && ix < src_res.w && iy >= 0 && iy < src_res.h) {
 						memset(&dst[(rx + ry * dst_res.w) * dst_bpp], src[ix + iy * src_res.w], dst_bpp);
 					}
