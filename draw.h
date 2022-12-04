@@ -49,7 +49,7 @@ namespace ev3media {
 		uint8_t* data;
 		res resolution;
 		size_t size;
-		readEPIC(FILE* f);
+		int readEPIC(FILE* f);
 	};
 
 	class renderer {
