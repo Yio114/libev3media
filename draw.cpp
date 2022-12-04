@@ -78,46 +78,53 @@ namespace ev3media {
 		render_pixel_array(data, resolution, r, dst, dst_res, dst_bpp);
 	}
 
-	void bitmap::loadEPIC(const char* filename) {
+	int bitmap::readEPIC(FILE* f) {
 		char signature[6];
-		FILE* f = fopen(filename, "rb");
+		fread(&signature, sizeof(char), 6, f);
 
-		if (f) {
-			fread(&signature, sizeof(char), 6, f);
+		if (memcmp(signature, "EV3PIC", 6) == 0) {
+			uint32_t width = 0, height = 0;
+			fread(&width, sizeof(uint32_t), 1, f);
+			fread(&height, sizeof(uint32_t), 1, f);
 
-			if (memcmp(signature, "EV3PIC", 6) == 0) {
-				uint32_t width = 0, height = 0;
-				fread(&width, sizeof(uint32_t), 1, f);
-				fread(&height, sizeof(uint32_t), 1, f);
-
-				if (is_big_endian()) {
-					width = swap_bytes<uint32_t>(width);
-					height = swap_bytes<uint32_t>(height);
-				}
-
-				size_t _size = width * height;
-				if (_size == 0) {
-					fclose(f);
-					return;
-				}
-
-				if (data != nullptr) delete[] data;
-				data = new uint8_t[_size];
-				resolution = { width, height };
-				size = _size;
-
-				fread(data, sizeof(uint8_t), _size, f);
-
-				for (size_t i = 0; i < _size; i++) {
-					data[i] = (data[i] & 0xF) * 17;
-				}
-
-				fclose(f);
+			if (is_big_endian()) {
+				width = swap_bytes<uint32_t>(width);
+				height = swap_bytes<uint32_t>(height);
 			}
-			else {
-				fclose(f);
+
+			size_t _size = width * height;
+			if (_size == 0) {
+				return -3;
 			}
+
+			if (data != nullptr) delete[] data;
+			data = new uint8_t[_size];
+			resolution = { width, height };
+			size = _size;
+
+			fread(data, sizeof(uint8_t), _size, f);
+
+			for (size_t i = 0; i < _size; i++) {
+				data[i] = (data[i] & 0xF) * 17;
+			}
+
+			return 0;
 		}
+		else {
+			return -2;
+		}
+	}
+
+	int bitmap::loadEPIC(const char* filename) {
+		FILE* f = fopen(filename, "rb");
+		if (!f) {
+			return -1;
+		}
+
+		int err = readEPIC(f);
+		fclose(f);
+
+		return err;
 	}
 
 	uint8_t* bitmap::get_data() {
