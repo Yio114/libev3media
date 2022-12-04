@@ -14,15 +14,15 @@
 
 namespace ev3media {
 
-	static void render_pixel_array(uint8_t* src, res src_res, rect src_rect, uint8_t* dst, res dst_res, uint8_t dst_bpp) {
-		for (int y = 0; y < src_rect.h; y++) {
-			for (int x = 0; x < src_rect.w; x++) {
-				int rx = x + src_rect.x;
-				int ry = y + src_rect.y;
+	static void render_pixel_array(uint8_t* src, res src_res, rect target_rect, uint8_t* dst, res dst_res, uint8_t dst_bpp) {
+		for (int y = 0; y < target_rect.h; y++) {
+			for (int x = 0; x < target_rect.w; x++) {
+				int rx = x + target_rect.x;
+				int ry = y + target_rect.y;
 
 				if (rx >= 0 && rx < dst_res.w && ry >= 0 && ry < dst_res.h) {
-					int ix = (x * scr_res.w) / src_rect.w;
-					int iy = (y * scr_res.h) / src_rect.h;
+					int ix = (x * scr_res.w) / target_rect.w;
+					int iy = (y * scr_res.h) / target_rect.h;
 
 					if (ix >= 0 && ix < src_res.w && iy >= 0 && iy < src_res.h) {
 						memset(&dst[(rx + ry * dst_res.w) * dst_bpp], src[ix + iy * src_res.w], dst_bpp);
