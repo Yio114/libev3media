@@ -191,18 +191,18 @@ namespace ev3media {
 	}
 
 	void renderer::fill_rect(rect r, color col) {
-		for(int y = 0; y < r.h; y++) {
-			for(int x = 0; x < r.w; x++) {
-				int rx = x + r.x;
-				int ry = y + r.y;
+		int copy_size = r.w;
+		if (copy_size + r.x >= current_target_res.w) {
+			copy_size = current_target_res.w - r.x;
+		}
 
-				if(rx >= 0 && rx < current_target_res.w
-					&& ry >= 0 && ry < current_target_res.w)
-				{
-					memset(&current_target_bytes[(rx + ry*current_target_res.w) * current_target_bpp],
-						col, current_target_bpp);
-				}
-			}
+		int copy_height = r.h;
+		if (copy_height + r.y >= current_target_res.h) {
+			copy_height = current_target_res.h - r.y;
+		}
+
+		for(int y = 0; y < copy_height; y++) {
+			memset(&current_target_bytes[r.x + (r.y + y) * current_target_res.w], col, copy_size);
 		}
 	}
 
