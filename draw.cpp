@@ -97,10 +97,7 @@ namespace ev3media {
 				return -3;
 			}
 
-			if (data != nullptr) delete[] data;
-			data = new uint8_t[_size];
-			resolution = { width, height };
-			size = _size;
+			re_create({ width, height });
 
 			fread(data, sizeof(uint8_t), _size, f);
 
@@ -135,7 +132,10 @@ namespace ev3media {
 	}
 
 	void bitmap::re_create(res new_res) {
-	
+		if (data != nullptr) delete[] data;
+		resolution = new_res;
+		size = new_res.w * new_res.h;
+		data = new uint8_t[size];
 	}
 
 
